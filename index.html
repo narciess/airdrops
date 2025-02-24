@@ -4,78 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Airdrop Dapp</title>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token"></script>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    
+    <!-- Solana Web3.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.75.0/lib/index.iife.min.js"></script>
 </head>
 <body>
-    <h1>🚀 Solana Airdrop Dapp</h1>
-    
-    <button id="connectWallet">Connect Phantom Wallet</button>
-    <input type="file" id="csvFile" accept=".csv">
-    <button id="startAirdrop" disabled>Start Airdrop</button>
-
-    <div id="status"></div>
+    <h1>Solana Airdrop Dapp</h1>
+    <button id="connectWallet">Connect Wallet</button>
+    <p id="walletAddress"></p>
 
     <script>
-        const TOKEN_ADDRESS = "HkRJ1HjXQveNZqx9ZrXNvY82KxMEhfcQ5fJE184Zpump";  // YAT 토큰 주소
-        let walletPublicKey = null;
-        let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+        const connectWalletButton = document.getElementById('connectWallet');
+        const walletAddressDisplay = document.getElementById('walletAddress');
 
-        // 🟩 팬텀 지갑 연결
-        document.getElementById("connectWallet").onclick = async () => {
-            try {
-                const provider = window.solana;
-                if (!provider) throw new Error("Phantom Wallet not found");
+        // Check if Phantom wallet is installed
+        const provider = window.phantom?.solana;
 
-                const resp = await provider.connect();
-                walletPublicKey = resp.publicKey;
-                alert("Connected to wallet: " + walletPublicKey.toString());
-                document.getElementById("startAirdrop").disabled = false;
-            } catch (error) {
-                console.error("Wallet connection failed:", error);
-            }
-        };
-
-        // 🟩 CSV 읽고 에어드랍 실행
-        document.getElementById("startAirdrop").onclick = async () => {
-            const file = document.getElementById("csvFile").files[0];
-            if (!file) return alert("Please upload a CSV file!");
-
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const rows = event.target.result.split("\n").slice(1);
-                for (const row of rows) {
-                    const [address, amount] = row.split(",").map(item => item.trim());
-                    if (address && amount) {
-                        await sendToken(address, parseFloat(amount));
-                    }
+        if (provider?.isPhantom) {
+            connectWalletButton.addEventListener('click', async () => {
+                try {
+                    const response = await provider.connect();
+                    const walletAddress = response.publicKey.toString();
+                    walletAddressDisplay.textContent = `Connected Wallet: ${walletAddress}`;
+                    console.log("Wallet connected:", walletAddress);
+                } catch (err) {
+                    console.error("Wallet connection failed:", err);
+                    walletAddressDisplay.textContent = "Failed to connect wallet.";
                 }
-                alert("🎉 Airdrop complete!");
-            };
-            reader.readAsText(file);
-        };
-
-        // 🟩 토큰 전송 함수
-        async function sendToken(recipient, amount) {
-            try {
-                const recipientPubKey = new solanaWeb3.PublicKey(recipient);
-                const senderPubKey = new solanaWeb3.PublicKey(walletPublicKey);
-
-                const transaction = new solanaWeb3.Transaction().add(
-                    solanaWeb3.SystemProgram.transfer({
-                        fromPubkey: senderPubKey,
-                        toPubkey: recipientPubKey,
-                        lamports: amount * solanaWeb3.LAMPORTS_PER_SOL,
-                    })
-                );
-
-                const { signature } = await window.solana.signAndSendTransaction(transaction);
-                await connection.confirmTransaction(signature);
-
-                document.getElementById("status").innerHTML += `<p>✅ Sent ${amount} tokens to ${recipient}</p>`;
-            } catch (error) {
-                document.getElementById("status").innerHTML += `<p>❌ Failed to send to ${recipient}: ${error.message}</p>`;
-            }
+            });
+        } else {
+            walletAddressDisplay.textContent = "Phantom wallet not found. Please install it.";
         }
     </script>
 </body>
