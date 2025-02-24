@@ -3,60 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Airdrop DApp</title>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.76.0"></script>
+    <title>Solana Airdrop Dapp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token"></script>
 </head>
 <body>
-    <h1>Solana Airdrop DApp</h1>
-    <button id="connectWallet">Connect Wallet</button>
-    <button id="airdrop">Request Airdrop</button>
+    <h1>🚀 Solana Airdrop Dapp</h1>
+    
+    <button id="connectWallet">Connect Phantom Wallet</button>
+    <input type="file" id="csvFile" accept=".csv">
+    <button id="startAirdrop" disabled>Start Airdrop</button>
+
+    <div id="status"></div>
 
     <script>
-        let walletAddress = null;
-        const connectWalletBtn = document.getElementById('connectWallet');
-        const airdropBtn = document.getElementById('airdrop');
-        
-        // Solana 네트워크 연결
-        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));
-        
-        // 지갑 연결 함수
-        async function connectWallet() {
-            if (window.solana && window.solana.isPhantom) {
-                try {
-                    const response = await window.solana.connect();
-                    walletAddress = response.publicKey.toString();
-                    alert('Wallet connected: ' + walletAddress);
-                } catch (err) {
-                    console.error(err);
-                    alert('Wallet connection failed');
-                }
-            } else {
-                alert('Phantom Wallet not found. Please install it!');
-            }
-        }
-        
-        // 에어드랍 요청 함수
-        async function requestAirdrop() {
-            if (!walletAddress) {
-                alert('Please connect your wallet first!');
-                return;
-            }
+        const TOKEN_ADDRESS = "HkRJ1HjXQveNZqx9ZrXNvY82KxMEhfcQ5fJE184Zpump";  // YAT 토큰 주소
+        let walletPublicKey = null;
+        let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+
+        // 🟩 팬텀 지감 연결
+        document.getElementById("connectWallet").onclick = async () => {
             try {
-                const signature = await connection.requestAirdrop(
-                    new solanaWeb3.PublicKey(walletAddress),
-                    solanaWeb3.LAMPORTS_PER_SOL
+                const provider = window.phantom?.solana;
+                if (!provider || !provider.isPhantom) throw new Error("Phantom Wallet not found");
+
+                const resp = await provider.connect();
+                walletPublicKey = resp.publicKey;
+                alert("Connected to wallet: " + walletPublicKey.toString());
+                document.getElementById("startAirdrop").disabled = false;
+            } catch (error) {
+                console.error("Wallet connection failed:", error);
+            }
+        };
+
+        // 🟩 CSV 읽고 에어드런 실행
+        document.getElementById("startAirdrop").onclick = async () => {
+            const file = document.getElementById("csvFile").files[0];
+            if (!file) return alert("Please upload a CSV file!");
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const rows = event.target.result.split("\n").slice(1);
+                for (const row of rows) {
+                    const [address, amount] = row.split(",").map(item => item.trim());
+                    if (address && amount) {
+                        await sendToken(address, parseFloat(amount));
+                    }
+                }
+                alert("🎉 Airdrop complete!");
+            };
+            reader.readAsText(file);
+        };
+
+        // 🟩 토큰 전송 함수
+        async function sendToken(recipient, amount) {
+            try {
+                const recipientPubKey = new solanaWeb3.PublicKey(recipient);
+                const senderPubKey = walletPublicKey;
+
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: senderPubKey,
+                        toPubkey: recipientPubKey,
+                        lamports: amount * solanaWeb3.LAMPORTS_PER_SOL,
+                    })
                 );
+
+                const { signature } = await window.phantom.solana.signAndSendTransaction(transaction);
                 await connection.confirmTransaction(signature);
-                alert('Airdrop successful! Check your wallet.');
-            } catch (err) {
-                console.error(err);
-                alert('Airdrop failed. Try again later.');
+
+                document.getElementById("status").innerHTML += `<p>✅ Sent ${amount} tokens to ${recipient}</p>`;
+            } catch (error) {
+                document.getElementById("status").innerHTML += `<p>❌ Failed to send to ${recipient}: ${error.message}</p>`;
             }
         }
-        
-        // 이벤트 리스너 연결
-        connectWalletBtn.addEventListener('click', connectWallet);
-        airdropBtn.addEventListener('click', requestAirdrop);
     </script>
 </body>
 </html>
