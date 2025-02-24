@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Airdrop Dapp</title>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.89.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.2.0"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -81,7 +81,7 @@
                 const recipientPubKey = new solanaWeb3.PublicKey(recipient);
                 const senderPubKey = walletPublicKey;
                 
-                const mint = new splToken.Token(connection, new solanaWeb3.PublicKey(TOKEN_ADDRESS), splToken.TOKEN_PROGRAM_ID, senderPubKey);
+                const mint = new splToken.Token(connection, new solanaWeb3.PublicKey(TOKEN_ADDRESS), solanaWeb3.TOKEN_PROGRAM_ID, senderPubKey);
                 
                 const senderTokenAccount = await mint.getOrCreateAssociatedAccountInfo(senderPubKey);
                 const recipientTokenAccount = await mint.getOrCreateAssociatedAccountInfo(recipientPubKey);
