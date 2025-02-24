@@ -39,7 +39,7 @@
     <script>
         const TOKEN_ADDRESS = "HkRJ1HjXQveNZqx9ZrXNvY82KxMEhfcQ5fJE184Zpump";  
         let walletPublicKey = null;
-        let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
 
         // 🟩 패턴 지갑 연결
         document.getElementById("connectWallet").onclick = async () => {
@@ -81,8 +81,7 @@
                 const recipientPubKey = new solanaWeb3.PublicKey(recipient);
                 const senderPubKey = walletPublicKey;
                 
-                const token = new solanaWeb3.PublicKey(TOKEN_ADDRESS);
-                const mint = new splToken.Token(connection, token, splToken.TOKEN_PROGRAM_ID, senderPubKey);
+                const mint = new splToken.Token(connection, new solanaWeb3.PublicKey(TOKEN_ADDRESS), splToken.TOKEN_PROGRAM_ID, senderPubKey);
                 
                 const senderTokenAccount = await mint.getOrCreateAssociatedAccountInfo(senderPubKey);
                 const recipientTokenAccount = await mint.getOrCreateAssociatedAccountInfo(recipientPubKey);
@@ -103,6 +102,7 @@
 
                 document.getElementById("status").innerHTML += `<p>✅ Sent ${amount} tokens to ${recipient}</p>`;
             } catch (error) {
+                console.error("Transaction failed:", error);
                 document.getElementById("status").innerHTML += `<p>❌ Failed to send to ${recipient}: ${error.message}</p>`;
             }
         }
